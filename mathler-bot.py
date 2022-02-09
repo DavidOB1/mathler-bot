@@ -1,4 +1,3 @@
-import random
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -12,23 +11,45 @@ cannot_have = []
 must_have = []
 value = ["A", "A", "A", "A", "A", "A"]
 not_value = ["", "", "", "", "", ""]
+skip_good_guess = True
+## if you set skip_good_guess to False, it can sometimes solve the puzzles
+## in less turns, but there will be longer pauses since it has to do
+## more computation
+keep_off = False
+
+
+driver = webdriver.Chrome()
+driver.get("https://www.mathler.com/")
+wait = WebDriverWait(driver, 10)
+wait.until(expected_conditions.title_contains("Mathler - A daily math"))
+page = driver.find_element(By.TAG_NAME, "html")
+num = int(driver.find_element(By.CLASS_NAME, "text-xl").text[30:32])
+
+
+def get_first_guess():
+    if num <= 65:
+        operations.append(f"-{75 - num}+75")
+    else:
+        operations.append(f"123-{123 - num}")
 
 
 def input_keys(keys):
     for key in keys:
         page.send_keys(key)
-        page.send_keys(Keys.RETURN)
+    page.send_keys(Keys.RETURN)
 
 
 def get_info(row):
+    tally = 0
     for i in range(6):
         symbol = op[i]
-        xpath = '//*[@id="root"]/div/div[4]/div[' + str(row) + ']/div[' + str(i+1) + ']'
+        xpath = f'//*[@id="root"]/div/div[4]/div[{row}]/div[{i+1}]'
         stat = driver.find_element(By.XPATH, xpath).get_attribute("class")[100:110]
         if "green" in stat:
             if not symbol in must_have:
                 must_have.append(symbol)
             value[i] = symbol
+            tally += 1
         elif "yellow" in stat:
             if not symbol in must_have:
                 must_have.append(symbol)
@@ -36,16 +57,30 @@ def get_info(row):
         elif "slate" in stat:
             if not ((symbol in must_have) or (symbol in value) or (symbol in cannot_have)):
                 cannot_have.append(symbol)
+    if tally == 6:
+        quit()
+    return tally
 
 
 def try_op(op):
     try:
         x = eval(op)
-        doubles = (("//" in op) or ("--" in op) or ("++" in op) or ("**" in op) or ("00" in op))
-        if (x == num) and not doubles:
-            operations.append(op)
+        if (x == num):
+            doubles = (("//" in op) or ("--" in op) or ("++" in op) or ("**" in op) or ("00" in op))
+            if (not doubles) and (skip_good_guess or (good_guess(op))):
+                for item in must_have:
+                    if not item in op:
+                        return
+                operations.append(op)
     except:
-        pass
+        return
+
+
+def good_guess(op):
+    for value in op:
+        if op.count(value) > 1:
+            return False
+    return True
 
 
 def loop(n, s):
@@ -54,124 +89,54 @@ def loop(n, s):
             if value[5] != "A":
                 try_op(s+value[5])
             else:
-                for i in range(y1):
-                    if possible_keys[i] != not_value[n]:
-                        try_op(s+possible_keys[i])
-                        if not len(operations) < 1:
+                for item in possible_keys:
+                    if item != not_value[n]:
+                        try_op(s+item)
+                        if len(operations) > 0:
                             break
         elif value[n] != "A":
             loop(n+1, s+value[n])
         else:
-            for i in range(y1):
-                if possible_keys[i] != not_value[n]:
-                    loop(n+1, s+possible_keys[i])
+            for item in possible_keys:
+                if item != not_value[n]:
+                    loop(n+1, s+item)
 
 
-def loop2(n, s):
-    if n == 5:
-        if value[5] != "A":
-            try_op(s+value[5])
-        else:
-            for i in range(y1):
-                if possible_keys[i] != not_value[n]:
-                    try_op(s+possible_keys[i])
-    elif value[n] != "A":
-        loop2(n+1, s+value[n])
+def get_guess():
+    if value[0] != "A":
+        loop(1, value[0])
     else:
-        for i in range(y1):
-            if possible_keys[i] != not_value[n]:
-                loop2(n+1, s+possible_keys[i])
+        if not_value[0] != "":
+            possible_first_key.remove(not_value[0])
+            not_value[0] = ""
+        for first_value in possible_first_key:
+            if len(operations) > 0:
+                break
+            else:
+                loop(1, first_value)
 
 
-driver = webdriver.Chrome()
-driver.get("https://www.mathler.com/")
-wait = WebDriverWait(driver, 10)
-wait.until(expected_conditions.title_is("Mathler - A daily math game"))
-page = driver.find_element(By.TAG_NAME, "html")
+def eliminate_keys():
+    for thing in cannot_have:
+        if thing in possible_keys:
+            possible_keys.remove(thing)
+        if thing in possible_first_key:
+            possible_first_key.remove(thing)
 
 
-daily = driver.find_element(By.CLASS_NAME, "text-xl")
-num = int(daily.text[30:32])
+get_first_guess()
 
-
-if num <= 65:
-    op = "-" + str(75 - num) + "+75"
-else:
-    op = "123-" + str(123 - num)
-
-
-input_keys(op)
-get_info(1)
-
-
-for thing in cannot_have:
-    if thing in possible_keys:
-        possible_keys.remove(thing)
-    if thing in possible_first_key:
-        possible_first_key.remove(thing)
-y1 = len(possible_keys)
-
-
-if value[0] != "A":
-    loop(1, value[0])
-else:
-    if not_value[0] != "":
-        possible_first_key.remove(not_value[0])
-    for i in range(len(possible_first_key)):
-        if len(operations) < 1:
-            loop(1, possible_first_key[i])
-
-
-op = operations[0]
-input_keys(op)
-operations.remove(op)
-get_info(2)
-
-
-for thing in cannot_have:
-    if thing in possible_keys:
-        possible_keys.remove(thing)
-    if thing in possible_first_key:
-        possible_first_key.remove(thing)
-y1 = len(possible_keys)
-
-
-if value[0] != "A":
-    loop2(1, value[0])
-else:
-    if (not_value[0] != "") and (not_value[0] in possible_first_key):
-        possible_first_key.remove(not_value[0])
-    for i in range(len(possible_first_key)):
-        if not possible_first_key[i] in not_value[0]:
-            loop2(1, possible_first_key[i])
-
-
-op = random.choice(operations)
-input_keys(op)
-
-for j in range(3):
-    for i in range(6):
-        dont_have_this = []
-        tally = 0
-        xpath = '//*[@id="root"]/div/div[4]/div[' + str(j+3) + ']/div[' + str(i+1) + ']'
-        stat = driver.find_element(By.XPATH, xpath).get_attribute("class")[100:110]
-        if "green" in stat:
-            operations = [x for x in operations if x[i] == op[i]]
-            if op[i] not in must_have:
-                must_have.append(op[i])
-            if op[i] in dont_have_this:
-                dont_have_this.remove(op[i])
-            tally += 1
-        elif "yellow" in stat:
-            operations = [x for x in operations if (op[i] in x) and (op[i] != x[i])]
-            if op[i] not in must_have:
-                must_have.append(op[i])
-        elif "slate" in stat:
-            if not ((op[i] in must_have) or (op[i] in dont_have_this)):
-                dont_have_this.append(op[i])
-        for something in dont_have_this:
-            operations = [x for x in operations if not something in x]
-    if tally == 5:
-        quit()
-    op = random.choice(operations)
+for i in range(6):
+    op = operations[0]
     input_keys(op)
+    operations.remove(op)
+    y = get_info(i+1)
+    if y > 1:
+        if not keep_off:
+            skip_good_guess = False
+    eliminate_keys()
+    get_guess()
+    if len(operations) == 0:
+        skip_good_guess = True
+        keep_off = True
+        get_guess()
