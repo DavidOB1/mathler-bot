@@ -23,7 +23,7 @@ driver.get("https://www.mathler.com/")
 wait = WebDriverWait(driver, 10)
 wait.until(expected_conditions.title_contains("Mathler - A daily math"))
 page = driver.find_element(By.TAG_NAME, "html")
-num = int(driver.find_element(By.CLASS_NAME, "text-xl").text[30:32])
+num = int(driver.find_element(By.CLASS_NAME, "text-md").text[40:])
 
 
 def get_first_guess():
@@ -43,7 +43,7 @@ def get_info(row):
     tally = 0
     for i in range(6):
         symbol = op[i]
-        xpath = f'//*[@id="root"]/div/div[4]/div[{row}]/div[{i+1}]'
+        xpath = f'//*[@id="root"]/div/div[3]/div[{row}]/div[{i+1}]'
         stat = driver.find_element(By.XPATH, xpath).get_attribute("class")[100:110]
         if "green" in stat:
             if not symbol in must_have:
