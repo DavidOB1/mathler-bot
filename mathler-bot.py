@@ -43,8 +43,11 @@ def get_info(row):
     tally = 0
     for i in range(6):
         symbol = op[i]
-        xpath = f'//*[@id="root"]/div/div[3]/div[{row}]/div[{i+1}]'
-        stat = driver.find_element(By.XPATH, xpath).get_attribute("class")[100:110]
+        try:
+            xpath = f'//*[@id="root"]/div/div[3]/div[{row}]/div[{i+1}]'
+            stat = driver.find_element(By.XPATH, xpath).get_attribute("class")[90:110]
+        except:
+            quit()
         if "green" in stat:
             if not symbol in must_have:
                 must_have.append(symbol)
@@ -57,6 +60,8 @@ def get_info(row):
         elif "slate" in stat:
             if not ((symbol in must_have) or (symbol in value) or (symbol in cannot_have)):
                 cannot_have.append(symbol)
+        else:
+            raise Exception("Invalid state of tile")
     if tally == 6:
         quit()
     return tally
