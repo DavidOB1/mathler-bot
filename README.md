@@ -12,4 +12,5 @@ it gathers from guesses, but it avoids more complication logical deductions (ex:
 can only be guessed once) in order to guess faster. It will also avoid guesses at the start that repeat characters in order to gather
 more information. 
 While this strategy usually works pretty well, there are likely more optomized approaches out there that potentially use more complicated
-algorithms. If you have any suggestions, feel free to shoot me an email: davidob323@gmail.com
+algorithms. If you have any suggestions, feel free to shoot me an email: davidob323@gmail.com Feel free to also let me know if the code
+doesn't work or throws exceptions; this happens often since they usually change the source code of the Mathler website every once in a while.
